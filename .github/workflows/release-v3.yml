@@ -1,0 +1,100 @@
+name: Publish BurnLink 3.0
+
+on:
+  push:
+    paths:
+      - 'src/burnlink.py'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Verify source exists
+        shell: pwsh
+        run: |
+          if (-not (Test-Path 'src\burnlink.py')) {
+            throw 'src/burnlink.py is missing.'
+          }
+          python -m py_compile 'src\burnlink.py'
+
+      - name: Stop if v3.0 is already published
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view v3.0 --repo $env:GITHUB_REPOSITORY 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host 'BurnLink 3.0 is already published.'
+            exit 0
+          }
+          'PUBLISH_V3=true' | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Build portable Windows package
+        if: env.PUBLISH_V3 == 'true'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $pythonVersion = '3.14.8'
+          $pythonUrl = "https://www.python.org/ftp/python/$pythonVersion/python-$pythonVersion-embed-amd64.zip"
+          $work = Join-Path $env:RUNNER_TEMP 'burnlink-package'
+          $stage = Join-Path $work 'BurnLink-Windows'
+          $runtime = Join-Path $stage 'runtime'
+          $release = Join-Path $PWD 'release'
+
+          Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item $release -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Path $runtime -Force | Out-Null
+          New-Item -ItemType Directory -Path $release -Force | Out-Null
+
+          $pythonZip = Join-Path $env:RUNNER_TEMP "python-$pythonVersion-embed-amd64.zip"
+          Invoke-WebRequest -Uri $pythonUrl -OutFile $pythonZip
+          Expand-Archive -Path $pythonZip -DestinationPath $runtime -Force
+
+          Copy-Item 'src\burnlink.py' (Join-Path $stage 'burnlink.py')
+          Copy-Item 'windows\Start-BurnLink.cmd' (Join-Path $stage 'Start-BurnLink.cmd')
+          Copy-Item 'README.md' (Join-Path $stage 'README.md')
+          Copy-Item 'CHANGELOG.md' (Join-Path $stage 'CHANGELOG.md')
+          Copy-Item 'THIRD-PARTY-NOTICES.md' (Join-Path $stage 'THIRD-PARTY-NOTICES.md')
+          Copy-Item 'LICENSE' (Join-Path $stage 'LICENSE')
+
+          $zip = Join-Path $release 'BurnLink-Windows-v3.0.zip'
+          Compress-Archive -Path $stage -DestinationPath $zip -CompressionLevel Optimal
+
+          $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
+          "$hash  BurnLink-Windows-v3.0.zip" | Set-Content -Path (Join-Path $release 'SHA256SUMS.txt') -Encoding ascii
+          Write-Host "SHA-256: $hash"
+
+      - name: Publish GitHub release
+        if: env.PUBLISH_V3 == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $notes = @'
+          BurnLink 3.0 is the first public release.
+
+          BurnLink creates temporary one-use browser messages from a Windows PC. The recipient installs nothing.
+
+          Highlights:
+          - one successful retrieval per link
+          - browser-side encrypted text, images, audio, and Spotify metadata
+          - optional passcode, expiry, read timer, revoke, and viewed receipts
+          - attached audio or Spotify playback can continue after the private note disappears
+          - portable Windows package with Python included
+
+          Screenshot and copy controls are deterrents, not guarantees. See SECURITY.md and docs/SECURITY-MODEL.md before relying on BurnLink for sensitive material.
+          '@
+
+          gh release create v3.0 `
+            'release/BurnLink-Windows-v3.0.zip' `
+            'release/SHA256SUMS.txt' `
+            --repo $env:GITHUB_REPOSITORY `
+            --title 'BurnLink 3.0' `
+            --notes $notes
