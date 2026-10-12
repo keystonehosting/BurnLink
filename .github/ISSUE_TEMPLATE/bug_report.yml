@@ -1,0 +1,48 @@
+name: Bug report
+description: Report a reproducible BurnLink problem
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: BurnLink version
+      placeholder: "3.0"
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "Windows 11 24H2"
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser
+      placeholder: "Edge 141"
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Include the smallest reliable sequence that triggers the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant terminal or browser output
+      render: text
