@@ -6,10 +6,6 @@ BurnLink creates temporary links for text, images, audio, and Spotify tracks. Th
 
 > BurnLink can discourage screenshots and copying, but no website can guarantee that visible or audible content cannot be captured.
 
-<p align="center">
-  <img src="assets/sender.png" alt="BurnLink sender interface" width="850">
-</p>
-
 ## Download
 
 **Windows portable build:** [Download BurnLink 3.0](https://github.com/keystonehosting/BurnLink/releases/download/v3.0/BurnLink-Windows-v3.0.zip)
@@ -112,18 +108,6 @@ BurnLink includes browser-side privacy deterrents such as:
 - optional hold-to-reveal mode.
 
 These are deterrents, not capture prevention. Operating-system tools, browser extensions, modified browsers, screen recorders, capture hardware, or a second camera can bypass them.
-
-## Screenshots
-
-| Sender | Recipient |
-| --- | --- |
-| ![BurnLink sender](assets/sender.png) | ![BurnLink recipient](assets/viewer.png) |
-
-Mobile / dark mode:
-
-<p align="center">
-  <img src="assets/sender-mobile-dark.png" alt="BurnLink sender mobile dark mode" width="360">
-</p>
 
 ## Run from source
 
